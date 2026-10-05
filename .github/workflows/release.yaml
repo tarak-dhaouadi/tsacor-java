@@ -1,0 +1,108 @@
+name: release
+
+# Automatically builds tsacor-java-<version>.jar and attaches it to the GitHub Release.
+# Nothing has to be started by hand. It runs when:
+#   - a Release is published on GitHub               -> JAR attached to that Release
+#   - a tag starting with "v" is pushed              -> Release created if needed, JAR attached
+#   - the code is pushed to main                     -> if the Release of the current version
+#                                                       (tag v<VERSION> or <VERSION>, VERSION from
+#                                                       build.sh) exists but has no JAR yet, the JAR
+#                                                       is built and attached
+# (Run workflow in the Actions tab remains available as an optional manual start.)
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach the JAR to (e.g. v0.1.1)'
+        required: true
+        default: 'v0.1.1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-attach:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@v5
+
+      - name: Decide which Release needs the JAR
+        id: rel
+        run: |
+          VERSION=$(sed -n 's/^VERSION=//p' build.sh | head -1)
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            # push to main: only act if the Release of the current version exists without a JAR
+            TAG=""
+            for t in "v$VERSION" "$VERSION"; do
+              if gh release view "$t" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then TAG="$t"; break; fi
+            done
+            if [ -z "$TAG" ]; then
+              echo "No Release for version $VERSION yet - nothing to do."
+              echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "tsacor-java-$VERSION.jar"; then
+              echo "Release $TAG already has the JAR - nothing to do."
+              echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          echo "Release tag: $TAG (version $VERSION)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java 11
+        if: steps.rel.outputs.skip != 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Build the JAR and run the self-test
+        if: steps.rel.outputs.skip != 'true'
+        run: bash ./build.sh --test
+
+      - name: Checksum
+        if: steps.rel.outputs.skip != 'true'
+        run: |
+          ls -l dist
+          test -s dist/tsacor-java-*.jar
+          cd dist && sha256sum *.jar > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Create the Release if it does not exist yet
+        if: steps.rel.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TAG" --generate-notes || true
+          fi
+
+      - name: Attach the JAR to the Release
+        if: steps.rel.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          for i in 1 2 3; do
+            gh release upload "$TAG" dist/*.jar dist/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY" && exit 0
+            sleep 10
+          done
+          exit 1

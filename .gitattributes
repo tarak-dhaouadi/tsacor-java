@@ -1,2 +1,30 @@
-# Auto detect text files and perform LF normalization
+# Normalise line endings: text files are stored with LF in the repository
 * text=auto
+
+# Source and documentation: always LF
+*.java  text eol=lf diff=java
+*.xml   text eol=lf
+*.md    text eol=lf
+*.cff   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.csv   text eol=lf
+*.txt   text eol=lf
+.gitignore     text eol=lf
+.gitattributes text eol=lf
+
+# Build scripts: shell needs LF, Windows batch needs CRLF
+*.sh   text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binary files: never touch or diff as text
+*.xlsx binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.jar  binary
+*.zip  binary
+*.class binary

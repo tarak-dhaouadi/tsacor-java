@@ -1,0 +1,59 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below (and cite RTSA / TSA for the boundary computations, see COPYRIGHTS.md)."
+type: software
+title: "tsacor-java: Trial Sequential Analysis for meta-analyses of correlations (Java edition of tsacor)"
+version: 0.1.1
+license: GPL-2.0-or-later
+repository-code: "https://github.com/tarak-dhaouadi/tsacor-java"
+url: "https://github.com/tarak-dhaouadi/tsacor-java"
+abstract: >-
+  A stand-alone desktop and command-line application (no R needed) for Trial
+  Sequential Analysis of meta-analyses of correlations (Pearson r or Spearman
+  rho, pooled on Fisher's z scale). It runs the same analysis as tsa_cor() in
+  the R package tsacor (this edition mirrors tsacor 0.1.1).
+keywords:
+  - trial sequential analysis
+  - meta-analysis
+  - correlation
+  - Fisher's z
+  - sequential monitoring boundaries
+  - Java
+authors:
+  - family-names: Dhaouadi
+    given-names: Tarak
+    alias: tarak-dhaouadi
+references:
+  - type: software
+    title: "tsacor: Trial Sequential Analysis for Meta-Analyses of Correlations"
+    authors:
+      - family-names: Dhaouadi
+        given-names: Tarak
+    repository-code: "https://github.com/tarak-dhaouadi/tsacor"
+  - type: software
+    title: "RTSA: Trial Sequential Analysis (TSA)"
+    version: 0.2.2
+    authors:
+      - family-names: Soerensen
+        given-names: Anne Lyngholm
+      - family-names: Olsen
+        given-names: Markus Harboe
+      - family-names: Lange
+        given-names: Theis
+      - family-names: Gluud
+        given-names: Christian
+    url: "https://cran.r-project.org/package=RTSA"
+  - type: article
+    title: "Estimating required information size by quantifying diversity in random-effects model meta-analyses"
+    authors:
+      - family-names: Wetterslev
+        given-names: Jørn
+      - family-names: Thorlund
+        given-names: Kristian
+      - family-names: Brok
+        given-names: Jesper
+      - family-names: Gluud
+        given-names: Christian
+    journal: "BMC Medical Research Methodology"
+    volume: 9
+    start: 86
+    year: 2009
