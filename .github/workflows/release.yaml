@@ -79,12 +79,11 @@ jobs:
         if: steps.rel.outputs.skip != 'true'
         run: bash ./build.sh --test
 
-      - name: Checksum
+      - name: Check that the JAR was built
         if: steps.rel.outputs.skip != 'true'
         run: |
           ls -l dist
           test -s dist/tsacor-java-*.jar
-          cd dist && sha256sum *.jar > SHA256SUMS.txt && cat SHA256SUMS.txt
 
       - name: Create the Release if it does not exist yet
         if: steps.rel.outputs.skip != 'true'
@@ -102,7 +101,7 @@ jobs:
           TAG: ${{ steps.rel.outputs.tag }}
         run: |
           for i in 1 2 3; do
-            gh release upload "$TAG" dist/*.jar dist/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY" && exit 0
+            gh release upload "$TAG" dist/*.jar --clobber --repo "$GITHUB_REPOSITORY" && exit 0
             sleep 10
           done
           exit 1
